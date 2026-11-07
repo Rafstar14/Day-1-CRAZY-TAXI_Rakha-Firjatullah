@@ -1,4 +1,4 @@
-# Kalkulator Interaktif
+# Simple Kalkulator
 
 Aplikasi kalkulator web interaktif yang dibangun menggunakan HTML5, CSS3, dan Vanilla JavaScript tanpa dependensi eksternal maupun library pihak ketiga. Aplikasi ini dirancang dengan antarmuka gelap (dark theme) yang ergonomis, mendukung navigasi keyboard penuh, serta menyediakan riwayat perhitungan lokal.
 
