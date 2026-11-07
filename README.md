@@ -23,4 +23,5 @@ Perintah Dasar Git (Essential Commands)
 5. git push origin main: Mengirim commit lokal ke repository remote di GitHub.
 6. git pull origin main: Mengambil dan menggabungkan perubahan dari remote ke repository lokal.
 7. git clone "url": Mengunduh/menyalin repository dari GitHub ke komputer lokal.
+   
 Konfigurasi & Setup SSH Key: Dokumen menjelaskan alur instalasi Git, pengaturan identitas, pembuatan SSH Key, konfigurasi SSH agent/Keychain pada macOS, dan penautan public key ke akun GitHub untuk otentikasi yang aman.
