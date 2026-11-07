@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Kalkulator</title>
+  <style>
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    :root {
+      --bg: #1a1a1a;
+      --surface: #242424;
+      --surface-raised: #2e2e2e;
+      --border: #3a3a3a;
+      --text-primary: #f0f0f0;
+      --text-secondary: #888;
+      --accent: #e87c3a;
+      --accent-dim: rgba(232, 124, 58, 0.15);
+      --btn-num: #2e2e2e;
+      --btn-num-hover: #383838;
+      --btn-op: #3a2e22;
+      --btn-op-hover: #4a3a28;
+      --btn-clear: #2e2525;
+      --btn-clear-hover: #3a2e2e;
+      --radius-sm: 6px;
+      --radius-md: 10px;
+      --radius-lg: 16px;
+    }
+
+    body {
+      background: var(--bg);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: "SF Pro Display", "Segoe UI", system-ui, sans-serif;
+      padding: 1rem;
+    }
+
+    .calculator {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      width: 320px;
+      overflow: hidden;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+    }
+
+    /* Display */
+    .display {
+      padding: 1.25rem 1.5rem 1rem;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .display__expr {
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+      min-height: 1.2rem;
+      text-align: right;
+      letter-spacing: 0.02em;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .display__value {
+      font-size: 2.4rem;
+      font-weight: 300;
+      color: var(--text-primary);
+      text-align: right;
+      line-height: 1.1;
+      margin-top: 0.25rem;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      letter-spacing: -0.02em;
+    }
+
+    .display__value.is-long {
+      font-size: 1.5rem;
+    }
+
+    /* Buttons */
+    .btn-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1px;
+      background: var(--border);
+    }
+
+    button {
+      border: none;
+      background: var(--btn-num);
+      color: var(--text-primary);
+      font-size: 1.05rem;
+      font-family: inherit;
+      padding: 1rem 0;
+      cursor: pointer;
+      transition: background 120ms, color 120ms;
+      outline: none;
+      position: relative;
+    }
+
+    button:focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: -2px;
+      z-index: 1;
+    }
+
+    button:hover {
+      background: var(--btn-num-hover);
+    }
+
+    button:active {
+      filter: brightness(0.85);
+    }
+
+    button.span-2 {
+      grid-column: span 2;
+    }
+
+    /* Operator keys */
+    button.op {
+      background: var(--btn-op);
+      color: var(--accent);
+      font-weight: 500;
+    }
+
+    button.op:hover {
+      background: var(--btn-op-hover);
+    }
+
+    /* AC / clear */
+    button.clear {
+      background: var(--btn-clear);
+      color: #e87c7c;
+    }
+
+    button.clear:hover {
+      background: var(--btn-clear-hover);
+    }
+
+    /* Equals */
+    button.equals {
+      background: var(--accent);
+      color: #fff;
+      font-weight: 600;
+    }
+
+    button.equals:hover {
+      background: #d46e2e;
+    }
+
+    /* Percent / sign */
+    button.util {
+      color: var(--text-secondary);
+    }
+
+    /* History panel */
+    .history-toggle {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      padding: 0.6rem 1rem;
+      font-size: 0.72rem;
+      color: var(--text-secondary);
+      background: var(--surface);
+      border-top: 1px solid var(--border);
+      cursor: pointer;
+      user-select: none;
+      transition: color 120ms;
+    }
+
+    .history-toggle:hover {
+      color: var(--text-primary);
+    }
+
+    .history-toggle svg {
+      flex-shrink: 0;
+    }
+
+    .history-panel {
+      background: var(--surface-raised);
+      border-top: 1px solid var(--border);
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 240ms ease;
+    }
+
+    .history-panel.is-open {
+      max-height: 220px;
+    }
+
+    .history-list {
+      list-style: none;
+      padding: 0.5rem 0;
+      overflow-y: auto;
+      max-height: 220px;
+    }
+
+    .history-list:empty::after {
+      content: "Belum ada riwayat";
+      display: block;
+      text-align: center;
+      color: var(--text-secondary);
+      font-size: 0.75rem;
+      padding: 1rem;
+    }
+
+    .history-list li {
+      padding: 0.4rem 1rem;
+      font-size: 0.78rem;
+      color: var(--text-secondary);
+      border-bottom: 1px solid var(--border);
+      cursor: pointer;
+      transition: background 100ms;
+    }
+
+    .history-list li:last-child {
+      border-bottom: none;
+    }
+
+    .history-list li:hover {
+      background: var(--border);
+      color: var(--text-primary);
+    }
+
+    .history-list li span.result {
+      float: right;
+      color: var(--accent);
+      font-weight: 500;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      button, .history-panel {
+        transition: none;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="calculator" role="application" aria-label="Kalkulator">
+    <div class="display" aria-live="polite" aria-atomic="true">
+      <div class="display__expr" id="expr" aria-label="Ekspresi"></div>
+      <div class="display__value" id="value" aria-label="Hasil">0</div>
+    </div>
+
+    <div class="btn-grid" role="group" aria-label="Tombol kalkulator">
+      <button class="clear" data-action="clear" aria-label="Hapus semua">AC</button>
+      <button class="util" data-action="sign" aria-label="Ubah tanda">+/-</button>
+      <button class="util" data-action="percent" aria-label="Persen">%</button>
+      <button class="op" data-action="operator" data-value="/" aria-label="Bagi">/</button>
+
+      <button data-action="digit" data-value="7" aria-label="7">7</button>
+      <button data-action="digit" data-value="8" aria-label="8">8</button>
+      <button data-action="digit" data-value="9" aria-label="9">9</button>
+      <button class="op" data-action="operator" data-value="*" aria-label="Kali">×</button>
+
+      <button data-action="digit" data-value="4" aria-label="4">4</button>
+      <button data-action="digit" data-value="5" aria-label="5">5</button>
+      <button data-action="digit" data-value="6" aria-label="6">6</button>
+      <button class="op" data-action="operator" data-value="-" aria-label="Kurang">-</button>
+
+      <button data-action="digit" data-value="1" aria-label="1">1</button>
+      <button data-action="digit" data-value="2" aria-label="2">2</button>
+      <button data-action="digit" data-value="3" aria-label="3">3</button>
+      <button class="op" data-action="operator" data-value="+" aria-label="Tambah">+</button>
+
+      <button class="span-2" data-action="digit" data-value="0" aria-label="0">0</button>
+      <button data-action="decimal" aria-label="Koma">,</button>
+      <button class="equals" data-action="equals" aria-label="Sama dengan">=</button>
+    </div>
+
+    <div class="history-toggle" role="button" tabindex="0" aria-expanded="false" aria-controls="history-panel" id="history-toggle">
+      <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+        <circle cx="6" cy="6" r="5" stroke="currentColor" stroke-width="1.2"/>
+        <path d="M6 3.5V6L7.5 7.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
+      </svg>
+      Riwayat
+      <svg class="chevron" width="10" height="10" viewBox="0 0 10 10" fill="none" aria-hidden="true" style="margin-left:auto;transition:transform 240ms">
+        <path d="M2.5 4L5 6.5L7.5 4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </div>
+    <div class="history-panel" id="history-panel" role="region" aria-label="Riwayat kalkulasi">
+      <ul class="history-list" id="history-list" aria-label="Daftar riwayat"></ul>
+    </div>
+  </div>
+
+  <script>
+    // State
+    const state = {
+      current: "0",
+      prev: null,
+      operator: null,
+      waitingForOperand: false,
+      expr: "",
+      history: JSON.parse(localStorage.getItem("calc-history") || "[]"),
+    };
+
+    // DOM refs
+    const valueEl = document.getElementById("value");
+    const exprEl = document.getElementById("expr");
+    const historyList = document.getElementById("history-list");
+    const historyPanel = document.getElementById("history-panel");
+    const historyToggle = document.getElementById("history-toggle");
+
+    function formatNumber(val) {
+      const n = parseFloat(val);
+      if (isNaN(n)) return val;
+      let s = parseFloat(n.toPrecision(10)).toString();
+      if (s.includes("e")) return n.toExponential(4);
+      return s;
+    }
+
+    function render() {
+      const display = formatNumber(state.current);
+      valueEl.textContent = display;
+      valueEl.classList.toggle("is-long", display.length > 10);
+      exprEl.textContent = state.expr;
+    }
+
+    function pushHistory(expr, result) {
+      state.history.unshift({ expr, result });
+      if (state.history.length > 20) state.history.length = 20;
+      localStorage.setItem("calc-history", JSON.stringify(state.history));
+      renderHistory();
+    }
+
+    function renderHistory() {
+      historyList.innerHTML = "";
+      state.history.forEach(({ expr, result }) => {
+        const li = document.createElement("li");
+        li.setAttribute("role", "button");
+        li.setAttribute("tabindex", "0");
+        li.setAttribute("aria-label", `${expr} = ${result}, klik untuk memuat`);
+        li.innerHTML = `${expr} <span class="result">${result}</span>`;
+        li.addEventListener("click", () => {
+          state.current = result.toString();
+          state.waitingForOperand = false;
+          state.expr = "";
+          render();
+        });
+        li.addEventListener("keydown", (e) => {
+          if (e.key === "Enter" || e.key === " ") li.click();
+        });
+        historyList.appendChild(li);
+      });
+    }
+
+    function calculate(a, op, b) {
+      a = parseFloat(a);
+      b = parseFloat(b);
+      switch (op) {
+        case "+": return a + b;
+        case "-": return a - b;
+        case "*": return a * b;
+        case "/": return b === 0 ? "Error" : a / b;
+        default: return b;
+      }
+    }
+
+    function handleDigit(digit) {
+      if (state.waitingForOperand) {
+        state.current = digit;
+        state.waitingForOperand = false;
+      } else {
+        if (state.current.replace(".", "").replace("-", "").length >= 12) return;
+        state.current = state.current === "0" ? digit : state.current + digit;
+      }
+    }
+
+    function handleDecimal() {
+      if (state.waitingForOperand) {
+        state.current = "0.";
+        state.waitingForOperand = false;
+        return;
+      }
+      if (!state.current.includes(".")) {
+        state.current += ".";
+      }
+    }
+
+    function handleOperator(op) {
+      const curr = parseFloat(state.current);
+      if (state.operator && !state.waitingForOperand) {
+        const result = calculate(state.prev, state.operator, curr);
+        state.current = formatNumber(result);
+        state.expr = `${formatNumber(state.prev)} ${opSymbol(state.operator)} ${formatNumber(curr)} ${opSymbol(op)}`;
+        state.prev = state.current;
+      } else {
+        state.prev = state.current;
+        state.expr = `${formatNumber(state.current)} ${opSymbol(op)}`;
+      }
+      state.operator = op;
+      state.waitingForOperand = true;
+    }
+
+    function opSymbol(op) {
+      return op === "*" ? "×" : op;
+    }
+
+    function handleEquals() {
+      if (!state.operator || state.waitingForOperand) return;
+      const curr = parseFloat(state.current);
+      const exprStr = `${formatNumber(state.prev)} ${opSymbol(state.operator)} ${formatNumber(curr)}`;
+      const result = calculate(state.prev, state.operator, curr);
+      const resultStr = formatNumber(result);
+      pushHistory(exprStr, resultStr);
+      state.expr = `${exprStr} =`;
+      state.current = resultStr;
+      state.operator = null;
+      state.prev = null;
+      state.waitingForOperand = true;
+    }
+
+    function handleClear() {
+      state.current = "0";
+      state.prev = null;
+      state.operator = null;
+      state.waitingForOperand = false;
+      state.expr = "";
+    }
+
+    function handleSign() {
+      state.current = formatNumber(parseFloat(state.current) * -1);
+    }
+
+    function handlePercent() {
+      state.current = formatNumber(parseFloat(state.current) / 100);
+    }
+
+    document.querySelector(".btn-grid").addEventListener("click", (e) => {
+      const btn = e.target.closest("button");
+      if (!btn) return;
+      const { action, value } = btn.dataset;
+      switch (action) {
+        case "digit":     handleDigit(value); break;
+        case "decimal":   handleDecimal(); break;
+        case "operator":  handleOperator(value); break;
+        case "equals":    handleEquals(); break;
+        case "clear":     handleClear(); break;
+        case "sign":      handleSign(); break;
+        case "percent":   handlePercent(); break;
+      }
+      render();
+    });
+
+    document.addEventListener("keydown", (e) => {
+      if (e.target.closest(".history-list")) return;
+      const keyMap = {
+        "0":"0","1":"1","2":"2","3":"3","4":"4",
+        "5":"5","6":"6","7":"7","8":"8","9":"9",
+      };
+      if (keyMap[e.key]) { handleDigit(keyMap[e.key]); }
+      else if (e.key === "." || e.key === ",") { handleDecimal(); }
+      else if (e.key === "+") { handleOperator("+"); }
+      else if (e.key === "-") { handleOperator("-"); }
+      else if (e.key === "*") { handleOperator("*"); }
+      else if (e.key === "/") { e.preventDefault(); handleOperator("/"); }
+      else if (e.key === "Enter" || e.key === "=") { handleEquals(); }
+      else if (e.key === "Escape" || e.key === "Delete") { handleClear(); }
+      else if (e.key === "Backspace") {
+        if (state.current.length > 1 && !state.waitingForOperand) {
+          state.current = state.current.slice(0, -1) || "0";
+        } else {
+          state.current = "0";
+        }
+      } else { return; }
+      render();
+    });
+
+    historyToggle.addEventListener("click", toggleHistory);
+    historyToggle.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" || e.key === " ") toggleHistory();
+    });
+
+    function toggleHistory() {
+      const isOpen = historyPanel.classList.toggle("is-open");
+      historyToggle.setAttribute("aria-expanded", isOpen);
+      historyToggle.querySelector(".chevron").style.transform = isOpen ? "rotate(180deg)" : "";
+    }
+
+    renderHistory();
+    render();
+  </script>
+</body>
+</html>
